@@ -1,0 +1,141 @@
+-XX:StartFlightRecording:filename=
+
+In **Java Flight Recorder (JFR)**, the annotations `@Enabled`, `@Threshold`, `@Period`, and `@StackTrace` are used to configure and fine-tune event recording. These annotations are applied to **JFR event classes** to define their behavior when they are being captured.
+
+---
+
+### 1. `@Enabled`
+- **Purpose:** Specifies whether the event is enabled by default.
+- **Type:** `boolean`
+- **Default:** `true`
+- **Usage:**
+  - If `true`, the event is enabled by default when recording starts.
+  - If `false`, the event is disabled by default and must be explicitly enabled.
+
+```java
+import jdk.jfr.*;
+
+@Name("com.example.MyEvent")
+@Label("My Custom Event")
+@Category("Custom")
+@Enabled(true)  // This event is enabled by default
+public class MyEvent extends Event {
+    @Label("Message")
+    public String message;
+}
+```
+
+---
+
+### 2. `@Threshold`
+- **Purpose:** Specifies the minimum duration an event must last before being recorded.
+- **Type:** `java.time.Duration`
+- **Default:** `0 ns` (event is always recorded)
+- **Usage:**
+  - If an event’s duration is shorter than the specified threshold, it will be ignored.
+  - Useful for filtering out short-lived events to reduce performance overhead.
+
+```java
+import jdk.jfr.*;
+
+@Name("com.example.LongTaskEvent")
+@Label("Long Task Event")
+@Threshold("10 ms")  // Only events lasting more than 10 ms are recorded
+public class LongTaskEvent extends Event {
+    @Label("Task Name")
+    public String taskName;
+}
+```
+
+---
+
+### 3. `@Period`
+- **Purpose:** Defines a **recurring event** that is automatically logged at a fixed interval.
+- **Type:** `java.time.Duration`
+- **Default:** Not set (event must be explicitly committed)
+- **Usage:**
+  - Useful for periodic monitoring of system metrics.
+
+```java
+import jdk.jfr.*;
+
+@Name("com.example.Heartbeat")
+@Label("Heartbeat Event")
+@Period("1 s")  // Event is recorded every 1 second
+public class HeartbeatEvent extends Event {
+    @Label("Timestamp")
+    public long timestamp = System.currentTimeMillis();
+}
+```
+
+---
+
+### 4. `@StackTrace`
+- **Purpose:** Specifies whether stack traces should be collected for the event.
+- **Type:** `boolean`
+- **Default:** `true`
+- **Usage:**
+  - If `true`, JFR records a stack trace when the event occurs.
+  - Can be disabled to reduce performance overhead.
+
+```java
+import jdk.jfr.*;
+
+@Name("com.example.MyEvent")
+@Label("My Event with Stack Trace")
+@StackTrace(false)  // Disables stack trace collection for this event
+public class MyEventWithStackTrace extends Event {
+    @Label("Message")
+    public String message;
+}
+==========================The shouldCommit Method=============================================
+You can reduce the overhead of expensive operations with the Event.shouldCommit
+method, which only commits an event if its duration is within a
+specified threshold.
+
+===============================Periodic Events================================
+The example PeriodicSample.java creates a periodic event named
+StartedThreadCount that records the total number of threads that have been created
+and started every second.
+
+@Period("1 s")
+
+Valid units for a period are: ns, us, ms, s, m, h, and d.
+
+In **Java Flight Recorder (JFR)**, the `@Period` annotation is used to specify how often periodic events should be recorded. The values `everyChunk`, `beginChunk`, and `endChunk` are predefined period values that control when the event is captured during flight recording.
+
+### **Understanding `@Period` Values**
+The `@Period` annotation is typically used with custom JFR events to define when they should be recorded.
+
+```java
+import jdk.jfr.*;
+
+@Name("com.example.MyPeriodicEvent")
+@Label("My Periodic Event")
+@Category("Custom Events")
+@PeriodicEvent
+@Period("everyChunk")
+public class MyPeriodicEvent extends Event {
+    @Label("Metric Value")
+    public long value;
+}
+```
+
+### **Period Values:**
+1. **`everyChunk`**
+   - The event is recorded at every **chunk rotation** (whenever JFR writes a new recording chunk).
+   - Suitable for **low-frequency** events where periodic snapshots are enough.
+
+2. **`beginChunk`**
+   - The event is recorded **only at the beginning** of a new chunk.
+   - Useful for logging **initial states** or settings at the start of a recording chunk.
+
+3. **`endChunk`**
+   - The event is recorded **only at the end** of a chunk.
+   - Useful for **final summaries** or logging aggregated values when a chunk is completed.
+
+### **When to Use These?**
+- If you need **continuous monitoring**, you might set a **custom period** like `"1 s"` instead of `"everyChunk"`.
+- If you want a snapshot **only when chunks are written**, you can use `"beginChunk"` or `"endChunk"`.
+
+Would you like an example of using periodic events effectively in JFR? 🚀
